@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="robots" content="noindex,nofollow"/>
+<title>Blushe – Iniciar Sesión</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌸</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600;700&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --accent:#c2607f;--accent-light:#e8a0bf;--accent-bg:#fce4ef;--accent-gradient:linear-gradient(135deg,#c2607f,#e8a0bf);
+  --dark:#2d1a24;--muted:#8a5f72;--border:#f0d5e4;--card:#fff;--danger:#e74c3c;--success:#27ae60;
+}
+*{box-sizing:border-box;margin:0}
+body{
+  font-family:'Inter',sans-serif;
+  background:linear-gradient(135deg,#fce4ef 0%,#f9ead3 50%,#fce4ef 100%);
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:1rem;
+  color:var(--dark);
+}
+.login-card{
+  background:var(--card);
+  border-radius:24px;
+  padding:2.5rem 2rem;
+  width:100%;
+  max-width:400px;
+  box-shadow:0 12px 36px rgba(45,26,36,.12);
+  border:1px solid var(--border);
+}
+.brand{
+  font-family:'Playfair Display',serif;
+  font-size:2.2rem;
+  font-weight:700;
+  text-align:center;
+  background:var(--accent-gradient);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  background-clip:text;
+  margin-bottom:.2rem;
+}
+.subtitle{
+  text-align:center;
+  color:var(--muted);
+  font-size:.88rem;
+  margin-bottom:1.8rem;
+}
+label{
+  display:block;
+  font-size:.78rem;
+  font-weight:700;
+  color:var(--muted);
+  text-transform:uppercase;
+  letter-spacing:.04em;
+  margin:.9rem 0 .35rem;
+}
+input{
+  width:100%;
+  border:1.5px solid var(--border);
+  border-radius:12px;
+  padding:.8rem 1rem;
+  font:inherit;
+  font-size:.95rem;
+  background:#fdfafb;
+  transition:border .2s;
+}
+input:focus{
+  outline:none;
+  border-color:var(--accent);
+  background:#fff;
+}
+.submit-btn{
+  width:100%;
+  background:var(--accent-gradient);
+  color:#fff;
+  border:none;
+  border-radius:12px;
+  padding:.9rem;
+  font:inherit;
+  font-size:1rem;
+  font-weight:600;
+  cursor:pointer;
+  margin-top:1.4rem;
+  transition:all .2s;
+  box-shadow:0 6px 16px rgba(194,96,127,.35);
+}
+.submit-btn:hover{
+  opacity:.92;
+  transform:translateY(-1px);
+}
+.submit-btn:disabled{
+  opacity:.6;
+  cursor:not-allowed;
+  transform:none;
+}
+.login-msg{
+  font-size:.85rem;
+  line-height:1.4;
+  margin-top:.9rem;
+  text-align:center;
+}
+.login-msg.error{color:var(--danger)}
+.login-msg.success{color:var(--success)}
+.footer-links{
+  margin-top:1.8rem;
+  padding-top:1.2rem;
+  border-top:1px dashed var(--border);
+  display:flex;
+  flex-direction:column;
+  gap:.6rem;
+  text-align:center;
+}
+.footer-links a{
+  color:var(--muted);
+  text-decoration:none;
+  font-size:.82rem;
+  font-weight:500;
+  transition:color .2s;
+}
+.footer-links a:hover{color:var(--accent)}
+.diag-box{
+  background:#f8f5f7;
+  border-radius:10px;
+  padding:.7rem;
+  margin-top:.8rem;
+  font-size:.78rem;
+  text-align:left;
+  display:none;
+  border:1px solid var(--border);
+}
+@media(max-width:480px){
+  .login-card{padding:2rem 1.4rem;border-radius:20px}
+  .brand{font-size:1.9rem}
+}
+</style>
+</head>
+<body>
+
+<div class="login-card">
+  <div class="brand">blushe ✦</div>
+  <div class="subtitle">Acceso Administrador</div>
+
+  <form id="loginForm">
+    <label for="email">Correo electrónico</label>
+    <input id="email" type="email" required autocomplete="username" placeholder="tu_correo@ejemplo.com">
+
+    <label for="pass">Contraseña</label>
+    <input id="pass" type="password" required autocomplete="current-password" placeholder="••••••••">
+
+    <button class="submit-btn" type="submit" id="loginBtn">Entrar al Panel →</button>
+    <div class="login-msg" id="loginMsg"></div>
+  </form>
+
+  <div class="footer-links">
+    <a href="index.html">← Volver a la tienda</a>
+    <button type="button" id="diagBtn" style="background:none;border:none;color:var(--muted);font-size:.78rem;cursor:pointer;text-decoration:underline">🔍 Probar conexión con Supabase</button>
+    <div class="diag-box" id="diagResult"></div>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script>
+let customStorage = window.localStorage;
+try {
+  window.localStorage.getItem('__test');
+} catch (e) {
+  const mem = {};
+  customStorage = {
+    getItem: k => mem[k] || null,
+    setItem: (k, v) => { mem[k] = String(v); },
+    removeItem: k => { delete mem[k]; }
+  };
+}
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: { storage: customStorage, autoRefreshToken: true, persistSession: true }
+});
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+// Si ya tiene sesión activa, redirigir directo al admin
+(async function checkExistingSession() {
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    if (session) {
+      window.location.replace('admin.html');
+    }
+  } catch (e) {}
+})();
+
+$('loginForm').onsubmit = async e => {
+  e.preventDefault();
+  const btn = $('loginBtn');
+  const msg = $('loginMsg');
+  btn.disabled = true;
+  btn.textContent = 'Verificando…';
+  msg.className = 'login-msg';
+  msg.innerHTML = '';
+
+  try {
+    const email = $('email').value.trim();
+    const password = $('pass').value;
+
+    const { data, error } = await sb.auth.signInWithPassword({ email, password });
+    if (error) {
+      msg.className = 'login-msg error';
+      if (error.message.includes('Invalid login credentials')) {
+        msg.innerHTML = '❌ <b>Credenciales incorrectas</b><br>Verifica correo y contraseña en Supabase.';
+      } else if (error.message.includes('Email not confirmed')) {
+        msg.innerHTML = '⚠️ <b>Correo no confirmado</b><br>Marca "Auto Confirm User" en Supabase &gt; Authentication.';
+      } else {
+        msg.innerHTML = '❌ ' + esc(error.message);
+      }
+      btn.disabled = false;
+      btn.textContent = 'Entrar al Panel →';
+      return;
+    }
+
+    msg.className = 'login-msg success';
+    msg.innerHTML = '✅ ¡Bienvenido! Redirigiendo al panel…';
+    btn.textContent = 'Redirigiendo…';
+
+    // Redirección inmediata a admin.html
+    setTimeout(() => {
+      window.location.replace('admin.html');
+    }, 400);
+
+  } catch (err) {
+    msg.className = 'login-msg error';
+    msg.innerHTML = '❌ Error de red: ' + esc(err.message || err);
+    btn.disabled = false;
+    btn.textContent = 'Entrar al Panel →';
+  }
+};
+
+// Diagnóstico
+$('diagBtn').onclick = async () => {
+  const box = $('diagResult');
+  box.style.display = 'block';
+  box.innerHTML = '⏳ Conectando con Supabase…';
+  try {
+    const { count, error } = await sb.from('products').select('*', { count: 'exact', head: true });
+    if (error) {
+      box.innerHTML = '⚠️ <b>Supabase respondió con advertencia:</b><br>' + esc(error.message);
+    } else {
+      box.innerHTML = `✅ <b>Supabase Conectado</b><br>• Catálogo: ${count ?? 0} productos.<br>• Servidor respondiendo con éxito.`;
+    }
+  } catch (e) {
+    box.innerHTML = '❌ Error: ' + esc(e.message || e);
+  }
+};
+</script>
+</body>
+</html>

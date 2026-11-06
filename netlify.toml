@@ -1,0 +1,38 @@
+# ── Blushe Store – Configuración Netlify ──────────────────────────
+
+[build]
+  publish = "."          # La carpeta raíz ya es el sitio
+
+# ── Headers de seguridad ───────────────────────────────────────────
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options         = "SAMEORIGIN"
+    X-Content-Type-Options  = "nosniff"
+    Referrer-Policy         = "strict-origin-when-cross-origin"
+    Permissions-Policy      = "camera=(), microphone=(), geolocation=()"
+
+# ── Cache para el HTML (siempre fresco) ───────────────────────────
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+
+# ── Admin & Login: no cachear, no indexar ─────────────────────────
+[[headers]]
+  for = "/admin.html"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+    X-Robots-Tag  = "noindex, nofollow"
+
+[[headers]]
+  for = "/login.html"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+    X-Robots-Tag  = "noindex, nofollow"
+
+# ── Redirigir cualquier ruta al index (SPA-ready) ─────────────────
+[[redirects]]
+  from   = "/*"
+  to     = "/index.html"
+  status = 200
