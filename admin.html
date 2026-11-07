@@ -1105,6 +1105,24 @@ async function toggleActive(id, active) {
   toast(active ? '✅ Visible en tienda' : '🙈 Producto oculto');
 }
 
+async function safeSaveProduct(data, editId = null) {
+  let payload = { ...data };
+  for (let attempt = 0; attempt < 4; attempt++) {
+    const res = editId
+      ? await sb.from('products').update(payload).eq('id', editId)
+      : await sb.from('products').insert(payload);
+    if (!res.error) return res;
+
+    const match = res.error.message?.match(/Could not find the '([^']+)' column/) ||
+                  res.error.message?.match(/column "([^"]+)" of relation "products" does not exist/);
+    if (match && match[1] && payload.hasOwnProperty(match[1])) {
+      delete payload[match[1]];
+      continue;
+    }
+    return res;
+  }
+}
+
 async function duplicateProduct(id) {
   const p = products.find(x => x.id === id);
   if (!p) return;
@@ -1116,7 +1134,7 @@ async function duplicateProduct(id) {
     variants: p.variants || [],
     active: false
   };
-  const { error } = await sb.from('products').insert(copy);
+  const { error } = await safeSaveProduct(copy);
   if (error) { toast('Error al duplicar: ' + error.message, 'error'); return; }
   toast('📋 Duplicado con éxito (oculto)', 'success');
   loadAll();
@@ -1336,16 +1354,7 @@ $('productForm').onsubmit = async e => {
       active: $('f_active').checked
     };
 
-    let { error } = editing
-      ? await sb.from('products').update(row).eq('id', editing.id)
-      : await sb.from('products').insert(row);
-    // Si aún no se ejecutó la migración (columna discount_percent), guarda igual: el % se calcula con precio/precio anterior
-    if (error && /discount_percent/.test(error.message)) {
-      const { discount_percent, ...rest } = row;
-      ({ error } = editing
-        ? await sb.from('products').update(rest).eq('id', editing.id)
-        : await sb.from('products').insert(rest));
-    }
+    const { error } = await safeSaveProduct(row, editing ? editing.id : null);
     if (error) throw error;
 
     pendingFiles.forEach(pf => URL.revokeObjectURL(pf.preview));
